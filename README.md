@@ -2,7 +2,7 @@
 Light effect on pygame surface
 
 
-# PROJECT:
+## PROJECT:
 ```
 This Library provide a selection of fast CYTHON methods designed to create realistic
 light effects on PYGAME surface (SDL surface).
@@ -16,7 +16,7 @@ You will find different light effect techniques that does the same job for examp
 area24 (array) and area24b (buffer) but allow you to choose the array's type that are
 more convenient for you before calling the methods.
 ```
-# TECHNIQUE:
+## TECHNIQUE:
 ```
 The technique behind the scene is very simple:
 
@@ -34,7 +34,7 @@ The technique behind the scene is very simple:
    transparency channel.Blending it to the background will create a rectangular surface shape and alter
    the alpha channel (creating an undesirable rendering effect).
 ```
-# EFFECTS
+## EFFECTS
 ```
 Some effect can be added to the light source to increase realistic rendering and or altering
 light source effect.
@@ -63,7 +63,7 @@ Here is the list of available effect you can use:
 If none of the above methods are used, a classic light source rendering effect is returned using only
 coloration and light intensity parameters.
 ```
-REQUIREMENT:
+## REQUIREMENT:
 ```
 - python > 3.0
 - numpy arrays
@@ -72,13 +72,13 @@ REQUIREMENT:
 - A compiler such visual studio, MSVC, CGYWIN setup correctly
   on your system
 ```
-# MULTI - PROCESSING CAPABILITY
+## MULTI - PROCESSING CAPABILITY
 ```
 The flag OPENMP can be changed any time if you wish to use multiprocessing
 or not (default True, using multi-processing).
 Also you can change the number of threads needed with the flag THREAD_NUMBER (default 10 threads)
 ```
-BUILDING PROJECT:
+## BUILDING PROJECT:
 ```
 Use the following command:
 C:\>python setup_lights.py build_ext --inplace
