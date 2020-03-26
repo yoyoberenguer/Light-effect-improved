@@ -20,6 +20,9 @@ area24 (array) and area24b (buffer). The main difference reside in the type of a
 the function (either buffer or numpy array).
 ```
 ## TECHNIQUE:
+
+![alt text](https://github.com/yoyoberenguer/light-effect-improved/blob/master/LIGHT.png)
+
 ```
 The technique behind the scene is very simple:
 
@@ -37,6 +40,7 @@ The technique behind the scene is very simple:
    transparency channel.Blending it to the background will create a rectangular surface shape and alter
    the alpha channel (creating an undesirable rendering effect).
 ```
+
 ## EFFECTS
 ```
 Some effect can be added to the light source to increase realistic rendering and or to alter
