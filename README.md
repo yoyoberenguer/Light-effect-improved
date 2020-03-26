@@ -20,10 +20,10 @@ the function (either buffer or numpy array).
 ```
 The technique behind the scene is very simple:
 
-1) A portion of the screen is taken (corresponding to the size of the light's radial mask),
+1) A portion of the screen is taken (corresponding to the light's radial mask size),
    often an RGB block of pixels under the light source.
-2) Then applying changes to the RGB block using the pre-defined settings such
-   as light coloration, light intensity value and other techniques that will be explain below,
+2) Then we are applying changes to the RGB block using the pre-defined settings such
+   as light coloration, light intensity value and other techniques explain below
    (smoothing, saturation, bloom effect, heat wave convection effect)
 3) The final array is build from both portions (RGB block and Alpha block, process also called STACKING)
    in order to provide an array shape (w, h, 4) to be converted to a pygame surface with
