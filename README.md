@@ -21,7 +21,7 @@ the function (either buffer or numpy array).
 ```
 ## TECHNIQUE:
 
-![alt text](https://github.com/yoyoberenguer/light-effect-improved/blob/master/LIGHT.png)
+![alt text](https://github.com/yoyoberenguer/Light-effect-improved/blob/master/LIGHT.PNG)
 
 ```
 The technique behind the scene is very simple:
