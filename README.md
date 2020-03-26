@@ -3,6 +3,8 @@ Light effect on pygame surface
 
 ![alt text](https://github.com/yoyoberenguer/light-effect-improved/blob/master/Screendump725.png)
 
+![alt text](https://github.com/yoyoberenguer/light-effect-improved/blob/master/Screendump1180.png)
+
 ## PROJECT:
 ```
 This Library provide a selection of fast CYTHON methods designed to create realistic
