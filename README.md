@@ -95,7 +95,7 @@ C:\>python setup_lights.py build_ext --inplace
 
 The below source code is also in the python file pylight.py
 
-Run pylight.py in your favorite IDE 
+Run pylight.py with your favorite python IDE 
 
 ```
 import LIGHTS
