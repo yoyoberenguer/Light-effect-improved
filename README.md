@@ -94,6 +94,7 @@ C:\>python setup_lights.py build_ext --inplace
 ## HOW TO: 
 
 The below source code is also in the python file pylight.py
+
 Run pylight.py in your favorite IDE 
 
 ```
@@ -122,20 +123,20 @@ lw2, lh2 = lw >> 1, lh >> 1
 
 # EFFECTS ARE NON CUMULATIVE 
 lit_surface, sw, sh = area24(
-                        MOUSE_POS[0],                       # Mouse position x 
-                        MOUSE_POS[1],                       # Mouse position y
-                        background_rgb,                     # Background image transform into a numpy.ndarray (w, h, 3)
-                        lalpha,                             # Radial mask image transform into a numpy.ndarray (w, h)
-                        intensity=8.0,                      # Light intensity > 0  
-                        color=c,                            # Light coloration (numpy.array) 
-                                                            # e.g numpy.array([128.0 / 255.0, 128.0 / 255.0, 200.0 / 255.0], 
-                                                            float32, copy=False)
-                        smooth=False,                       # boolean, True smooth the output image with GAUSSIAN blur 5x5 
-                        saturation=False, sat_value=0.2,    # boolean, True saturate the output image (use HSL algorithm), sat_value is
-                                                            # default 20% (moderate saturation)
-                        bloom=False,                        # boolean, Bloom effect to the final output image
-                        heat=False, frequency=index)        # boolean, Heat effect on the output image, frequency is an incrementing 
-                                                            # variable (default 0.5 each frame)
+   MOUSE_POS[0],                       # Mouse position x 
+   MOUSE_POS[1],                       # Mouse position y
+   background_rgb,                     # Background image transform into a numpy.ndarray (w, h, 3)
+   lalpha,                             # Radial mask image transform into a numpy.ndarray (w, h)
+   intensity=8.0,                      # Light intensity > 0  
+   color=c,                            # Light coloration (numpy.array) 
+                                       # e.g numpy.array([128.0 / 255.0, 128.0 / 255.0, 200.0 / 255.0], 
+                                       float32, copy=False)
+   smooth=False,                       # boolean, True smooth the output image with GAUSSIAN blur 5x5 
+   saturation=False, sat_value=0.2,    # boolean, True saturate the output image (use HSL algorithm), sat_value is
+                                       # default 20% (moderate saturation)
+   bloom=False,                        # boolean, Bloom effect to the final output image
+   heat=False, frequency=index)        # boolean, Heat effect on the output image, frequency is an incrementing 
+                                       # variable (default 0.5 each frame)
   # sw and sh are equivalent to the 
   # light effect width and height (returned by area24)
   # lw and lh are the radial mask width and height
