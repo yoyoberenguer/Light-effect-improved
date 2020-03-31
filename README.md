@@ -5,7 +5,7 @@ Light effect on pygame surface
 
 ![alt text](https://github.com/yoyoberenguer/light-effect-improved/blob/master/Screendump1180.png)
 
-![alt text](https://github.com/yoyoberenguer/light-effect-improved/blob/master/volume.gif)
+![alt text](https://github.com/yoyoberenguer/light-effect-improved/blob/master/Volume.gif)
 
 ## PROJECT:
 ```
