@@ -1,5 +1,5 @@
 
-###cython: boundscheck=False, wraparound=False, nonecheck=False, optimize.use_switch=True
+#cython: boundscheck=False, wraparound=False, nonecheck=False, optimize.use_switch=True
 
 """
 MIT License
@@ -108,18 +108,16 @@ try:
     from numpy import ndarray, zeros, empty, uint8, int32, float64, float32, dstack, full, ones,\
     asarray, ascontiguousarray
 except ImportError:
-    print("\n<numpy> library is missing on your system."
+    raise ImportError("\n<numpy> library is missing on your system."
           "\nTry: \n   C:\\pip install numpy on a window command prompt.")
-    raise SystemExit
 
 # CYTHON IS REQUIRED
 try:
     cimport cython
     from cython.parallel cimport prange
 except ImportError:
-    print("\n<cython> library is missing on your system."
+    raise ImportError("\n<cython> library is missing on your system."
           "\nTry: \n   C:\\pip install cython on a window command prompt.")
-    raise SystemExit
 
 cimport numpy as np
 
@@ -132,14 +130,55 @@ try:
     from pygame.image import frombuffer
 
 except ImportError:
-    print("\n<Pygame> library is missing on your system."
+    raise ImportError("\n<Pygame> library is missing on your system."
           "\nTry: \n   C:\\pip install pygame on a window command prompt.")
-    raise SystemExit
 
 cimport numpy as np
 from libc.stdio cimport printf
 from libc.stdlib cimport free, rand
 from libc.math cimport round, fmin, fmax, sin
+import sys
+
+if 'MAPPING' not in sys.modules:
+    # MAPPING LIBRARY IS REQUIRED
+    try:
+        import MAPPING
+    except ImportError:
+        raise ImportError("\n<MAPPING> library is missing on your system.")
+
+    try:
+        from MAPPING cimport xyz, to1d_c, to3d_c, vfb_rgb_c, vfb_c
+    except ImportError:
+        raise ImportError("\n<MAPPING> Cannot import methods.")
+
+
+if 'SATURATION' not in sys.modules:
+    # SATURATION LIBRARY IS REQUIRED
+    try:
+        import SATURATION
+    except ImportError:
+        ImportError("\n<SATURATION> library is missing on your system.")
+
+    try:
+        from SATURATION cimport saturation_buffer_mask_c, saturation_array24_mask_c,\
+            saturation_array32_mask_c, saturation_array24_c, saturation_array32_c
+    except ImportError:
+        raise ImportError("\n<SATURATION> Cannot import methods.")
+
+
+
+# SATURATION LIBRARY IS REQUIRED
+try:
+    import bloom
+except ImportError:
+    ImportError("\n<bloom> library is missing on your system.")
+
+try:
+    from bloom cimport bloom_effect_buffer24_c, bloom_effect_buffer32_c,\
+        bloom_effect_array24_c, bloom_effect_array32_c, blur5x5_buffer24_c, blur5x5_buffer32_c, \
+        blur5x5_array24_c, blur5x5_array32_c, bpf24_c, bpf24_b_c, bpf32_c, bpf32_b_c
+except ImportError:
+    raise ImportError("\n<bloom> Cannot import methods.")
 
 
 cdef extern from 'library.c' nogil:
@@ -155,7 +194,7 @@ cdef struct xyz:
 
 DEF OPENMP = True
 
-if OPENMP == True:
+if OPENMP:
     DEF THREAD_NUMBER = 10
 else:
     DEF THREAD_NUMNER = 1
@@ -180,6 +219,7 @@ DEF TWO_THIRD = 2.0/3.0
 
 
 # ----------------- INTERFACE --------------------
+# ** BELOW METHOD ACCESSIBLE FROM PYTHON SCRIPT **
 
 # ------------------------------------------------
 #                     ARRAY 
@@ -208,8 +248,6 @@ def area32(x, y, background_rgb, mask_alpha,
 # Create a light effect on the given portion of the screen (compatible 32 bit)
 def apply32b(rgb_buffer_, alpha_buffer_, intensity, color, w, h):
     return apply32b_c(rgb_buffer_, alpha_buffer_, intensity, color, w, h)
-
-
 # ------------------------------------------------
 
 # ------------------------------------------------
@@ -290,90 +328,6 @@ def stack_buffer(rgb_array_, alpha_, w, h, transpose):
 # STACK OBJECTS RGB AND ALPHA
 def stack_object(rgb_array_, alpha_, transpose=False):
     return stack_object_c(rgb_array_, alpha_, transpose)
-
-
-# ----------- GAUSSIAN BLUR
-# APPLY GAUSSIAN BLUR KERNEL 5x5 (COMPATIBLE WITH RGB ARRAY)
-def blur5x5_array24(rgb_array_):
-    return blur5x5_array24_c(rgb_array_)
-
-# APPLY GAUSSIAN BLUR KERNEL 5x5 (COMPATIBLE WITH RGBA ARRAY)
-def blur5x5_array32(rgb_array_):
-    return blur5x5_array32_c(rgb_array_)
-
-# APPLY GAUSSIAN BLUR KERNEL 5x5 (COMPATIBLE WITH BUFFER SURFACE 24 BIT)
-def blur5x5_buffer24(rgb_array_, width, height, depth, float [::1] mask=None):
-    return blur5x5_buffer24_c(rgb_array_, width, height, depth, mask)
-
-# APPLY GAUSSIAN BLUR KERNEL 5x5 (COMPATIBLE WITH BUFFER SURFACE 32 BIT)
-def blur5x5_buffer32(rgba_array_, width, height, depth, float [::1] mask=None):
-    return blur5x5_buffer32_c(rgba_array_, width, height, depth, mask)
-
-# ------------ SATURATION
-# APPLY SATURATION TO AN RGB BUFFER USING A MASK(COMPATIBLE SURFACE 24 BIT)
-def saturation_buffer_mask(array_, shift_, mask_)->Surface:
-    return saturation_buffer_mask_c(array_, shift_, mask_)
-
-# APPLY SATURATION TO AN RGB ARRAY USING A MASK(COMPATIBLE SURFACE 24 BIT)
-def saturation_array24_mask(array_, shift_, mask_)->Surface:
-    return saturation_array24_mask_c(array_, shift_, mask_)
-
-# APPLY SATURATION TO AN RGBA ARRAY USING A MASK(COMPATIBLE SURFACE 32 BIT)
-def saturation_array32_mask(array_, alpha_, shift_, mask_)->Surface:
-    return saturation_array32_mask_c(array_, alpha_, shift_, mask_)
-
-# APPLY SATURATION TO AN RGB ARRAY
-def saturation_array24(array_, shift_):
-    return saturation_array24_c(array_, shift_)
-
-# APPLY SATURATION TO AN RGBA ARRAY
-def saturation_array32(array_, alpha_, shift_):
-    return saturation_array32_c(array_, alpha_, shift_)
-
-# ------------- BRIGHT PASS FILTER
-# BRIGHT PASS FILTER FOR SURFACE 24-BIT
-def bpf24_b(image, threshold = 128):
-    return bpf24_b_c(image, threshold)
-
-# BRIGHT PASS FILTER FOR SURFACE 32-BIT
-def bpf32_b(image, threshold = 128):
-    return bpf32_b_c(image, threshold)
-
-# -------------- FILTERING
-# FILTERING SURFACE 24-BIT
-def filtering24(surface_, mask_):
-    return filtering24_c(surface_, mask_)
-
-# FILTERING SURFACE 32-BIT
-def filtering32(surface_, mask_):
-    return filtering32_c(surface_, mask_)
-
-# -------------- MAPPING ARRAY
-# CONVERT 3D INDEXING TO 1D BUFFER INDEXING
-def to1d(x, y, z, width, depth):
-    return to1d_c(x, y, z, width, depth)
-
-# CONVERT 1D BUFFER INDEXING TO 3D INDEXING
-def to3d(index, width, depth):
-    return to3d_c(index, width, depth)
-
-# FLIP VERTICALLY A SINGLE BUFFER VALUE.
-def vmap_buffer(index, width, height, depth):
-    return vmap_buffer_c(index, width, height, depth)
-
-# FLIP(RE-INDEXING) VERTICALLY AN ENTIRE ARRAY OR MEMORYVIEWSLICE
-def vfb_rgb(source, target, width, height):
-    return vfb_rgb_c(source, target, width, height)
-
-
-# --------------- BLOOM
-# BLOOM EFFECT FOR 24 BIT SURFACE
-def bloom_effect_buffer24(surface_, threshold_, smooth_=1, mask_=None):
-    return bloom_effect_buffer24_c(surface_, threshold_, smooth_, mask_)
-
-# BLOOM EFFECT FOR 32 BIT SURFACE
-def bloom_effect_buffer32(surface_, threshold_, smooth_=1, mask_=None):
-    return bloom_effect_buffer32_c(surface_, threshold_, smooth_, mask_)
 
 # ---------------- HEAT EFFECT
 # HORIZONTAL HEAT WAVE EFFECT FOR RGB ARRAY (24 BIT SURFACE)
@@ -630,7 +584,8 @@ cdef area24_c(int x, int y, np.ndarray[np.uint8_t, ndim=3] background_rgb,
     # e.g surface = saturation_array24(new_array, sat_value)
     elif saturation:
         mask = array2d_normalized_c(alpha)
-        surface = saturation_array24_mask_c(new_array, sat_value, mask)
+        surface = saturation_array24_mask_c(new_array, sat_value, mask, swap_row_column=True)
+        # TODO PROBLEM HERE CHECK WHY TWO METHODS
         # surface = saturation_array24(new_array, sat_value)
 
     # BLOOM
@@ -640,7 +595,7 @@ cdef area24_c(int x, int y, np.ndarray[np.uint8_t, ndim=3] background_rgb,
         mask = array2d_normalized_c(alpha)
         # threshold_ = 0 (highest brightness)
         # Bright pass filter will compute all pixels
-        surface = bloom_effect_buffer24_c(surface, threshold_=0, smooth_=1, mask_=mask)
+        surface = bloom_effect_buffer24_c(surface, threshold_=190, smooth_=1, mask_=mask)
 
     elif heat:
         # alpha = numpy.full((ax, ay), 255, numpy.uint8)
@@ -793,7 +748,7 @@ cdef area32_c(int x, int y, np.ndarray[np.uint8_t, ndim=3] background_rgb,
     # sat_value variable can be adjusted at the function call
     # new_array is a portion of the background, the array is flipped.
     elif saturation:
-        surface = saturation_array32_c(new_array, alpha, sat_value)
+        surface = saturation_array32_c(new_array, alpha, sat_value, False)
         ax, ay = ay, ax
     # BLOOM
     elif bloom:
@@ -803,7 +758,7 @@ cdef area32_c(int x, int y, np.ndarray[np.uint8_t, ndim=3] background_rgb,
         mask = array2d_normalized_c(alpha)
         # threshold_ = 0 (highest brightness)
         # Bright pass filter will compute all pixels
-        surface = bloom_effect_buffer32_c(surface, threshold_=0, smooth_=1, mask_=mask)
+        surface = bloom_effect_buffer32_c(surface, threshold_=190, smooth_=1, mask_=mask)
 
     elif heat:
         ax, ay = ay, ax
@@ -858,6 +813,7 @@ cdef area24b_c(int x, int y, unsigned char [:, :, :] background_rgb,
     
     EFFECTS ARE NON CUMULATIVE
 
+    :param array_: Optional mask
     :param sat_value:
     :param x: integer; x coordinate
     :param y: integer; y coordinate
@@ -886,7 +842,7 @@ cdef area24b_c(int x, int y, unsigned char [:, :, :] background_rgb,
     except (ValueError, pygame.error) as e:
         raise ValueError('\nArray shape not understood.')
 
-    assert intensity > 0.0, '\nIntensity value cannot be < 0.0'
+    # assert intensity >= 0.0, '\nIntensity value cannot be < 0.0'
 
     cdef int lx, ly
     lx = ax >> 1
@@ -982,7 +938,7 @@ cdef area24b_c(int x, int y, unsigned char [:, :, :] background_rgb,
 
         # threshold_ = 0 (highest brightness)
         # Bright pass filter will compute all pixels
-        surface = bloom_effect_buffer24_c(surface, threshold_=0, smooth_=1, mask_=mask)
+        surface = bloom_effect_buffer24_c(surface, threshold_=200, smooth_=1, mask_=mask)
 
     elif heat:
         surface = heatwave_buffer24_horiz_c(rgb,
@@ -1154,8 +1110,9 @@ cdef area24bb_c(int x, int y, unsigned char [:] background_rgb, int w, int h,
     # SATURATION
     elif saturation:
         new_mask = vfb_c(new_mask, numpy.empty(ax_ * ay_, dtype=numpy.uint8), ax_, ay_)  # Flip the buffer
-        mask = buffer_normalized_thresh_c(new_mask, threshold=0)
-        mask = numpy.asarray(mask, dtype=float32).reshape(ax_, ay_)
+        # mask = buffer_normalized_thresh_c(new_mask, threshold=0)
+        # mask = numpy.asarray(mask, dtype=float32).reshape(ax_, ay_)
+        mask = numpy.ones((ax_, ay_), dtype=numpy.float32)
         surface = saturation_buffer_mask_c(rgb, 0.20, mask)
         ...
 
@@ -1166,7 +1123,7 @@ cdef area24bb_c(int x, int y, unsigned char [:] background_rgb, int w, int h,
         mask = buffer_normalized_thresh_c(new_mask, threshold=0)                         # Normalized buffer
         mask = numpy.asarray(mask, dtype=float32).reshape(ax_, ay_)                      # Transform to 2d (w, h)
 
-        surface = bloom_effect_buffer24_c(surface, threshold_=0, smooth_=1, mask_=mask)
+        surface = bloom_effect_buffer24_c(surface, threshold_=200, smooth_=1, mask_=mask)
 
     elif heat:
         new_mask = vfb_c(new_mask, numpy.empty(ax_ * ay_, dtype=numpy.uint8), ax_, ay_)  # Flip the buffer
@@ -1409,1074 +1366,6 @@ cdef light_volumetric_c(unsigned char[:, :, :] rgb, unsigned char[:, :] alpha,
     cdef int ax, ay
     ax, ay = new_array.shape[:2]
     return pygame.image.frombuffer(new_array, (w, h), 'RGB')
-
-
-# ----------------------------------------------- GAUSSIAN BLUR -----------------------------------------------
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef blur5x5_buffer24_c(unsigned char [:] rgb_buffer,
-                      int width, int height, int depth, float [::1] mask=None):
-    """
-    Method using a C-buffer as input image (width * height * depth) uint8 data type
-    5 x5 Gaussian kernel used:
-        # |1   4   6   4  1|
-        # |4  16  24  16  4|
-        # |6  24  36  24  6|  x 1/256
-        # |4  16  24  16  4|
-        # |1  4    6   4  1|
-    It uses convolution property to process the image in two passes (horizontal and vertical passes).
-    Pixels convoluted outside the image edges will be set to an adjacent pixel edge values
-
-    :param mask: 1d buffer (MemoryViewSlice) mask filled with values in range [0 ... 1.0]  
-    :param depth: integer; image depth (3)RGB, default 3
-    :param height: integer; image height
-    :param width:  integer; image width
-    :param rgb_buffer: 1d buffer representing a 24bit format pygame.Surface  
-    :return: 24-bit Pygame.Surface without per-pixel information and array 
-    """
-
-    cdef:
-        int b_length= len(rgb_buffer)
-
-
-    # check if the buffer length equal theoretical length
-    if b_length != (width * height * depth):
-        print("\nIncorrect 24-bit format image.")
-
-    # kernel 5x5 separable
-    cdef:
-        float [::1] kernel = \
-            numpy.array(([1.0/16.0,
-                          4.0/16.0,
-                          6.0/16.0,
-                          4.0/16.0,
-                          1.0/16.0]), dtype=numpy.float32, copy=False)
-
-        short int kernel_half = 2
-        short int kernel_length = len(kernel)
-        int xx, yy, index, i, ii
-        float k, r, g, b
-        char kernel_offset
-        unsigned char red, green, blue
-        xyz v;
-
-        # convolve array contains pixels of the first pass(horizontal convolution)
-        # convolved array contains pixels of the second pass.
-        # buffer_ source pixels
-        unsigned char [::1] convolve = numpy.empty(width * height * depth, numpy.uint8)
-        unsigned char [::1] convolved = numpy.empty(width * height * depth, numpy.uint8)
-        unsigned char [:] buffer_ = rgb_buffer
-
-    with nogil:
-        # horizontal convolution
-        # goes through all RGB values of the buffer and apply the convolution
-        for i in prange(0, b_length, depth, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-
-            if mask is not None:
-                if mask[i//3] == 0.0:
-                    convolve[i    ] = 0
-                    convolve[i + 1] = 0
-                    convolve[i + 2] = 0
-                    continue
-
-            r, g, b = 0, 0, 0
-
-            # v.x point to the row value of the equivalent 3d array (width, height, depth)
-            # v.y point to the column value ...
-            # v.z is always = 0 as the i value point always
-            # to the red color of a pixel in the C-buffer structure
-            v = to3d_c(i, width, depth)
-
-            # testing
-            # index = to1d_c(v.x, v.y, v.z, width, 3)
-            # print(v.x, v.y, v.z, i, index)
-
-            for kernel_offset in range(-kernel_half, kernel_half + 1):
-
-                k = kernel[kernel_offset + kernel_half]
-
-                # Convert 1d indexing into a 3d indexing
-                # v.x correspond to the row index value in a 3d array
-                # v.x is always pointing to the red color of a pixel (see for i loop with
-                # step = 3) in the C-buffer data structure.
-                xx = v.x + kernel_offset
-
-                # avoid buffer overflow
-                if xx < 0 or xx > (width - 1):
-                    red, green, blue = 0, 0, 0
-
-                else:
-                    # Convert the 3d indexing into 1d buffer indexing
-                    # The index value must always point to a red pixel
-                    # v.z = 0
-                    index = to1d_c(xx, v.y, v.z, width, depth)
-
-                    # load the color value from the current pixel
-                    red = buffer_[index]
-                    green = buffer_[index + 1]
-                    blue = buffer_[index + 2]
-
-
-                r = r + red * k
-                g = g + green * k
-                b = b + blue * k
-
-            # place the new RGB values into an empty array (convolve)
-            convolve[i    ] = <unsigned char>r
-            convolve[i + 1] = <unsigned char>g
-            convolve[i + 2] = <unsigned char>b
-
-        # Vertical convolution
-        # In order to vertically convolve the kernel, we have to re-order the index value
-        # to fetch data vertically with the vmap_buffer function.
-        for i in prange(0, b_length, depth, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-
-                # Use the mask as a filter
-                if mask is not None:
-                    if mask[i//3] == 0.0:
-                        convolved[i    ] = 0
-                        convolved[i + 1] = 0
-                        convolved[i + 2] = 0
-                        continue
-
-                r, g, b = 0, 0, 0
-
-                v = to3d_c(i, width, depth)
-
-                for kernel_offset in range(-kernel_half, kernel_half + 1):
-
-                    k = kernel[kernel_offset + kernel_half]
-
-                    yy = v.y + kernel_offset
-
-                    if yy < 0 or yy > (height-1):
-
-                        red, green, blue = 0, 0, 0
-                    else:
-
-                        ii = to1d_c(v.x, yy, v.z, width, depth)
-                        red, green, blue = convolve[ii],\
-                            convolve[ii+1], convolve[ii+2]
-
-                    r = r + red * k
-                    g = g + green * k
-                    b = b + blue * k
-
-                convolved[i    ] = <unsigned char>r
-                convolved[i + 1] = <unsigned char>g
-                convolved[i + 2] = <unsigned char>b
-
-    return pygame.image.frombuffer(convolved, (width, height), "RGB"), convolved
-
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef blur5x5_buffer32_c(unsigned char [:] rgba_buffer,
-                      int width, int height, int depth, float [::1] mask=None):
-    """
-    Method using a C-buffer as input image (width * height * depth) uint8 data type
-    5 x5 Gaussian kernel used:
-        # |1   4   6   4  1|
-        # |4  16  24  16  4|
-        # |6  24  36  24  6|  x 1/256
-        # |4  16  24  16  4|
-        # |1  4    6   4  1|
-    It uses convolution property to process the image in two passes (horizontal and vertical passes).
-    Pixels convoluted outside the image edges will be set to an adjacent pixel edge values
-
-    :param mask: 1d buffer (MemoryViewSlice) mask filled with values in range [0 ... 1.0]  
-    :param depth: integer; image depth (3)RGB, default 3
-    :param height: integer; image height
-    :param width:  integer; image width
-    :param rgba_buffer: 1d buffer representing a 24bit format pygame.Surface  
-    :return: 24-bit Pygame.Surface without per-pixel information and array 
-    """
-
-    cdef:
-        int b_length= len(rgba_buffer)
-
-
-    # check if the buffer length equal theoretical length
-    if b_length != (width * height * depth):
-        raise ValueError(
-            "\nIncorrect 32-bit format image, expecting %s got %s " % (width * height * depth, b_length))
-
-    # kernel 5x5 separable
-    cdef:
-        float [::1] kernel = \
-            numpy.array(([1.0/16.0,
-                          4.0/16.0,
-                          6.0/16.0,
-                          4.0/16.0,
-                          1.0/16.0]), dtype=numpy.float32, copy=False)
-
-        short int kernel_half = 2
-        short int kernel_length = len(kernel)
-        int xx, yy, index, i, ii
-        float k, r, g, b
-        char kernel_offset
-        unsigned char red, green, blue
-        xyz v;
-
-        # convolve array contains pixels of the first pass(horizontal convolution)
-        # convolved array contains pixels of the second pass.
-        # buffer_ source pixels
-        unsigned char [::1] convolve = numpy.empty(width * height * depth, numpy.uint8)
-        unsigned char [::1] convolved = numpy.empty(width * height * depth, numpy.uint8)
-        unsigned char [:] buffer_ = numpy.frombuffer(rgba_buffer, numpy.uint8)
-
-    with nogil:
-        # horizontal convolution
-        # goes through all RGB values of the buffer and apply the convolution
-        for i in prange(0, b_length, depth, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-
-            if mask is not None:
-                if mask[i//3] == 0.0:
-                    convolve[i    ] = 0
-                    convolve[i + 1] = 0
-                    convolve[i + 2] = 0
-                    convolve[i + 3] = 0
-                    continue
-
-            r, g, b = 0, 0, 0
-
-            # v.x point to the row value of the equivalent 3d array (width, height, depth)
-            # v.y point to the column value ...
-            # v.z is always = 0 as the i value point always
-            # to the red color of a pixel in the C-buffer structure
-            v = to3d_c(i, width, depth)
-
-            # testing
-            # index = to1d_c(v.x, v.y, v.z, width, 4)
-            # print(v.x, v.y, v.z, i, index)
-
-            for kernel_offset in range(-kernel_half, kernel_half + 1):
-
-                k = kernel[kernel_offset + kernel_half]
-
-                # Convert 1d indexing into a 3d indexing
-                # v.x correspond to the row index value in a 3d array
-                # v.x is always pointing to the red color of a pixel (see for i loop with
-                # step = 4) in the C-buffer data structure.
-                xx = v.x + kernel_offset
-
-                # avoid buffer overflow
-                if xx < 0 or xx > (width - 1):
-                    red, green, blue = 0, 0, 0
-
-                else:
-                    # Convert the 3d indexing into 1d buffer indexing
-                    # The index value must always point to a red pixel
-                    # v.z = 0
-                    index = to1d_c(xx, v.y, v.z, width, depth)
-
-                    # load the color value from the current pixel
-                    red = buffer_[index]
-                    green = buffer_[index + 1]
-                    blue = buffer_[index + 2]
-
-
-
-                r = r + red * k
-                g = g + green * k
-                b = b + blue * k
-
-            # place the new RGB values into an empty array (convolve)
-            convolve[i    ] = <unsigned char>r
-            convolve[i + 1] = <unsigned char>g
-            convolve[i + 2] = <unsigned char>b
-            convolve[i + 3] = buffer_[i + 3]
-
-        # Vertical convolution
-        # In order to vertically convolve the kernel, we have to re-order the index value
-        # to fetch data vertically with the vmap_buffer function.
-        for i in prange(0, b_length, depth, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-
-                # Use the mask as a filter
-                if mask is not None:
-                    if mask[i//3] == 0.0:
-                        convolved[i    ] = 0
-                        convolved[i + 1] = 0
-                        convolved[i + 2] = 0
-                        convolved[i + 3] = 0
-                        continue
-
-                r, g, b = 0, 0, 0
-
-                v = to3d_c(i, width, depth)
-
-                for kernel_offset in range(-kernel_half, kernel_half + 1):
-
-                    k = kernel[kernel_offset + kernel_half]
-
-                    yy = v.y + kernel_offset
-
-                    if yy < 0 or yy > (height-1):
-
-                        red, green, blue = 0, 0, 0
-                    else:
-
-                        ii = to1d_c(v.x, yy, v.z, width, depth)
-                        red, green, blue = convolve[ii],\
-                            convolve[ii+1], convolve[ii+2]
-
-                    r = r + red * k
-                    g = g + green * k
-                    b = b + blue * k
-
-                convolved[i    ] = <unsigned char>r
-                convolved[i + 1] = <unsigned char>g
-                convolved[i + 2] = <unsigned char>b
-                convolved[i + 3] = buffer_[i + 3]
-
-    return pygame.image.frombuffer(convolved, (width, height), "RGBA"), convolved
-
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef unsigned char [:, :, ::1] blur5x5_array24_c(unsigned char [:, :, :] rgb_array_):
-    """
-    # Gaussian kernel 5x5
-        # |1   4   6   4  1|
-        # |4  16  24  16  4|
-        # |6  24  36  24  6|  x 1/256
-        # |4  16  24  16  4|
-        # |1  4    6   4  1|
-    This method is using convolution property and process the image in two passes,
-    first the horizontal convolution and last the vertical convolution
-    pixels convoluted outside image edges will be set to adjacent edge value
-    
-    :param rgb_array_: numpy.ndarray type (w, h, 3) uint8 
-    :return: Return 24-bit a numpy.ndarray type (w, h, 3) uint8
-    """
-
-
-    cdef int w, h, dim
-    try:
-        w, h, dim = (<object>rgb_array_).shape[:3]
-
-    except (ValueError, pygame.error) as e:
-        raise ValueError('\nArray shape not understood.')
-
-
-    # kernel_ = numpy.array(([1.0 / 16.0,
-    #                        4.0 / 16.0,
-    #                        6.0 / 16.0,
-    #                        4.0 / 16.0,
-    #                        1.0 / 16.0]), dtype=float32, copy=False)
-
-    # kernel 5x5 separable
-    cdef:
-        # float [::1] kernel = kernel_
-        float[5] kernel = [1.0/16.0, 4.0/16.0, 6.0/16.0, 4.0/16.0, 1.0/16.0]
-        short int kernel_half = 2
-        unsigned char [:, :, ::1] convolve = numpy.empty((w, h, 3), dtype=uint8)
-        unsigned char [:, :, ::1] convolved = numpy.empty((w, h, 3), dtype=uint8)
-        short int kernel_length = len(kernel)
-        int x, y, xx, yy
-        float k, r, g, b, s
-        char kernel_offset
-        unsigned char red, green, blue
-
-    with nogil:
-        # horizontal convolution
-        for y in prange(0, h, schedule='static', num_threads=4):  # range [0..h-1)
-
-            for x in range(0, w):  # range [0..w-1]
-
-                r, g, b = 0, 0, 0
-
-                for kernel_offset in range(-kernel_half, kernel_half + 1):
-
-                    k = kernel[kernel_offset + kernel_half]
-
-                    xx = x + kernel_offset
-
-                    # check boundaries.
-                    # Fetch the edge pixel for the convolution
-                    if xx < 0:
-                        red, green, blue = rgb_array_[0, y, 0],\
-                        rgb_array_[0, y, 1], rgb_array_[0, y, 2]
-                    elif xx > (w - 1):
-                        red, green, blue = rgb_array_[w-1, y, 0],\
-                        rgb_array_[w-1, y, 1], rgb_array_[w-1, y, 2]
-                    else:
-                        red, green, blue = rgb_array_[xx, y, 0],\
-                            rgb_array_[xx, y, 1], rgb_array_[xx, y, 2]
-
-                    r = r + red * k
-                    g = g + green * k
-                    b = b + blue * k
-
-                convolve[x, y, 0], convolve[x, y, 1], convolve[x, y, 2] = <unsigned char>r,\
-                    <unsigned char>g, <unsigned char>b
-
-        # Vertical convolution
-        for x in prange(0,  w, schedule='static', num_threads=4):
-
-            for y in range(0, h):
-                r, g, b = 0, 0, 0
-
-                for kernel_offset in range(-kernel_half, kernel_half + 1):
-
-                    k = kernel[kernel_offset + kernel_half]
-                    yy = y + kernel_offset
-
-                    if yy < 0:
-                        red, green, blue = convolve[x, 0, 0],\
-                        convolve[x, 0, 1], convolve[x, 0, 2]
-                    elif yy > (h -1):
-                        red, green, blue = convolve[x, h-1, 0],\
-                        convolve[x, h-1, 1], convolve[x, h-1, 2]
-                    else:
-                        red, green, blue = convolve[x, yy, 0],\
-                            convolve[x, yy, 1], convolve[x, yy, 2]
-
-                    r = r + red * k
-                    g = g + green * k
-                    b = b + blue * k
-
-                convolved[x, y, 0], convolved[x, y, 1], convolved[x, y, 2] = \
-                    <unsigned char>r, <unsigned char>g, <unsigned char>b
-
-    return convolved
-
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef unsigned char [:, :, ::1] blur5x5_array32_c(unsigned char [:, :, :] rgb_array_):
-    """
-    # Gaussian kernel 5x5
-        # |1   4   6   4  1|
-        # |4  16  24  16  4|
-        # |6  24  36  24  6|  x 1/256
-        # |4  16  24  16  4|
-        # |1  4    6   4  1|
-    This method is using convolution property and process the image in two passes,
-    first the horizontal convolution and last the vertical convolution
-    pixels convoluted outside image edges will be set to adjacent edge value
-    
-    :param rgb_array_: 3d numpy.ndarray type (w, h, 4) uint8, RGBA values
-    :return: Return a numpy.ndarray type (w, h, 4) uint8
-    """
-
-    cdef int w, h, dim
-    try:
-        w, h, dim = rgb_array_.shape[:3]
-
-    except (ValueError, pygame.error) as e:
-        raise ValueError('\nArray shape not understood.')
-
-
-    # kernel_ = numpy.array(([1.0 / 16.0,
-    #                        4.0 / 16.0,
-    #                        6.0 / 16.0,
-    #                        4.0 / 16.0,
-    #                        1.0 / 16.0]), dtype=float32, copy=False)
-
-    # kernel 5x5 separable
-    cdef:
-        # float [::1] kernel = kernel_
-        float[5] kernel = [1.0/16.0, 4.0/16.0, 6.0/16.0, 4.0/16.0, 1.0/16.0]
-        short int kernel_half = 2
-        unsigned char [:, :, ::1] convolve = numpy.empty((w, h, 3), dtype=uint8)
-        unsigned char [:, :, ::1] convolved = numpy.empty((w, h, 4), dtype=uint8)
-        short int kernel_length = len(kernel)
-        int x, y, xx, yy
-        float k, r, g, b
-        char kernel_offset
-        unsigned char red, green, blue
-
-    with nogil:
-        # horizontal convolution
-        for y in prange(0, h, schedule='static', num_threads=4):
-
-            for x in range(0, w):
-
-                r, g, b = 0, 0, 0
-
-                for kernel_offset in range(-kernel_half, kernel_half + 1):
-
-                    k = kernel[kernel_offset + kernel_half]
-
-                    xx = x + kernel_offset
-
-                    # check boundaries.
-                    # Fetch the edge pixel for the convolution
-                    if xx < 0:
-                        red, green, blue = rgb_array_[0, y, 0],\
-                        rgb_array_[0, y, 1], rgb_array_[0, y, 2]
-                    elif xx > (w - 1):
-                        red, green, blue = rgb_array_[w-1, y, 0],\
-                        rgb_array_[w-1, y, 1], rgb_array_[w-1, y, 2]
-                    else:
-                        red, green, blue = rgb_array_[xx, y, 0],\
-                            rgb_array_[xx, y, 1], rgb_array_[xx, y, 2]
-
-                    r = r + red * k
-                    g = g + green * k
-                    b = b + blue * k
-
-                convolve[x, y, 0], convolve[x, y, 1], convolve[x, y, 2] = <unsigned char>r,\
-                    <unsigned char>g, <unsigned char>b
-
-        # Vertical convolution
-        for x in prange(0,  w, schedule='static', num_threads=4):
-
-            for y in range(0, h):
-                r, g, b = 0, 0, 0
-
-                for kernel_offset in range(-kernel_half, kernel_half + 1):
-
-                    k = kernel[kernel_offset + kernel_half]
-                    yy = y + kernel_offset
-
-                    if yy < 0:
-                        red, green, blue = convolve[x, 0, 0],\
-                        convolve[x, 0, 1], convolve[x, 0, 2]
-                    elif yy > (h -1):
-                        red, green, blue = convolve[x, h-1, 0],\
-                        convolve[x, h-1, 1], convolve[x, h-1, 2]
-                    else:
-                        red, green, blue = convolve[x, yy, 0],\
-                            convolve[x, yy, 1], convolve[x, yy, 2]
-
-                    r = r + red * k
-                    g = g + green * k
-                    b = b + blue * k
-
-                convolved[x, y, 0], convolved[x, y, 1],\
-                convolved[x, y, 2], convolved[x, y, 3] = \
-                    <unsigned char>r, <unsigned char>g, <unsigned char>b, rgb_array_[x, y, 3]
-
-    return convolved
-
-
-
-
-
-# ************* BELOW UNIT ARE REDUNDANT (ALREADY IN PEL.pyx ****************************
-
-
-# ------------------------------------ SATURATION -------------------------------------------------
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef saturation_array24_mask_c(unsigned char [:, :, :] array_, float shift_, float [:, :] mask_array):
-    """
-    Change the saturation level of a pygame.Surface (compatible with 24bit only).
-    Transform RGB model into HSL model and <shift_> saturation value.
-    Optional mask_array to determine area to be modified.
-    The mask should be a 2d array filled with float values
-    
-    :param array_: 3d numpy.ndarray shapes (w, h, 3) representing a 24bit format pygame.Surface.
-    :param shift_: Value must be in range [-1.0 ... 1.0],
-                   between [-1.0 ... 0.0] decrease saturation.
-                   between [0.0  ... 1.0] increase saturation.
-    :param mask_array: float numpy.ndarray shape (width, height) 
-    :return: a pygame.Surface 24-bit without per-pixel information 
-    """
-
-    assert -1.0 <= shift_ <= 1.0, 'Argument shift_ must be in range [-1.0 .. 1.0].'
-
-    cdef int width, height
-    try:
-        height, width = numpy.asarray(array_).shape[:2]
-    except (ValueError, pygame.error):
-        raise ValueError(
-            '\nArray type not compatible, expecting MemoryViewSlice got %s ' % type(array_))
-
-    cdef:
-        unsigned char [:, :, ::1] new_array = empty((height, width, 3), dtype=uint8)
-        unsigned char r, g, b
-        float h, l, s
-        double *hsl = [0.0, 0.0, 0.0]
-        double *rgb = [0.0, 0.0, 0.0]
-        int i, j
-
-    with nogil:
-        for i in prange(width, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-            for j in range(height):
-
-                # load pixel RGB values
-                r = array_[j, i, 0]
-                g = array_[j, i, 1]
-                b = array_[j, i, 2]
-
-                if mask_array[i, j] > 0.0:
-                    # # change saturation
-                    hsl = rgb_to_hsl(r * ONE_255, g * ONE_255, b * ONE_255)
-                    h = hsl[0]
-                    s = hsl[1]
-                    l = hsl[2]
-                    s = min((s + shift_), 1.0)
-                    s = max(s, 0.0)
-                    rgb = hsl_to_rgb(h, s, l)
-                    r = <unsigned char>(rgb[0] * 255.0)
-                    g = <unsigned char>(rgb[1] * 255.0)
-                    b = <unsigned char>(rgb[2] * 255.0)
-                    free(rgb)
-                    free(hsl)
-
-                new_array[j, i, 0] = r
-                new_array[j, i, 1] = g
-                new_array[j, i, 2] = b
-
-    return pygame.image.frombuffer(new_array, (width, height), 'RGB')
-
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef saturation_array32_mask_c(unsigned char [:, :, :] array_, unsigned char [:, :] alpha_,
-                               float shift_, float [:, :] mask_array=None):
-    """
-    Change the saturation level of a pygame.Surface (compatible with 32bit only).
-    Transform RGBA model into HSL model and <shift_> saturation value.
-    Optional mask_array to determine area to be modified.
-    The mask_array should be a 2d array filled with float values 
-    
-    :param alpha_: 2d numpy.array or MemoryViewSlice containing surface alpha values
-    :param array_: 3d numpy.ndarray shapes (w, h, 4) representing a 32-bit format pygame.Surface.
-    :param shift_: Value must be in range [-1.0 ... 1.0],
-                   between [-1.0 ... 0.0] decrease saturation.
-                   between [0.0  ... 1.0] increase saturation.
-    :param mask_array: float numpy.ndarray shape (width, height) 
-    :return: a pygame.Surface 32-bit with per-pixel information 
-    """
-
-    assert -1.0 <= shift_ <= 1.0, '\nshift_ argument must be in range [-1.0 .. 1.0].'
-    assert mask_array is not None, '\nmask_array argument cannot be None.'
-
-    cdef int width, height
-
-    try:
-        height, width = (<object>array_).shape[:2]
-    except (ValueError, pygame.error):
-        try:
-            height, width = numpy.asarray(array_).shape[:2]
-        except (ValueError, pygame.error):
-            raise ValueError('\nArray type not compatible,'
-                             ' expecting MemoryViewSlice got %s ' % type(array_))
-
-    cdef:
-        unsigned char [:, :, ::1] new_array = empty((height, width, 4), dtype=uint8)
-        unsigned char r, g, b
-        float h, l, s
-        double *hsl = [0.0, 0.0, 0.0]
-        double *rgb = [0.0, 0.0, 0.0]
-        int i, j
-
-    with nogil:
-        for i in prange(width, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-            for j in range(height):
-
-                # load pixel RGB values
-                r = array_[j, i, 0]
-                g = array_[j, i, 1]
-                b = array_[j, i, 2]
-
-                if mask_array[i, j] > 0:
-                    # # change saturation
-                    hsl = rgb_to_hsl(r * ONE_255, g * ONE_255, b * ONE_255)
-                    h = hsl[0]
-                    s = hsl[1]
-                    l = hsl[2]
-                    s = min((s + shift_), 1.0)
-                    s = max(s, 0.0)
-                    rgb = hsl_to_rgb(h, s, l)
-                    r = <unsigned char>(rgb[0] * 255.0)
-                    g = <unsigned char>(rgb[1] * 255.0)
-                    b = <unsigned char>(rgb[2] * 255.0)
-                    free(rgb)
-                    free(hsl)
-
-                new_array[j, i, 0] = r
-                new_array[j, i, 1] = g
-                new_array[j, i, 2] = b
-                new_array[j, i, 3] = alpha_[i, j]
-
-    return pygame.image.frombuffer(new_array, (width, height), 'RGBA')
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef saturation_array24_c(unsigned char [:, :, :] array_, float shift_):
-    """
-    Change the saturation level of an array / pygame.Surface (compatible with 24-bit format image)
-    Transform RGB model into HSL model and add <shift_> value to the saturation 
-    
-    :param array_: numpy.ndarray (w, h, 3) uint8 representing 24 bit format surface
-    :param shift_: Value must be in range [-1.0 ... 1.0], negative values decrease saturation
-    :return: a pygame.Surface 24-bit without per-pixel information 
-    """
-
-    assert -1.0 <= shift_ <= 1.0, 'Argument shift_ must be in range [-1.0 .. 1.0].'
-
-    cdef int width, height
-    try:
-        width, height = (<object>array_).shape[:2]
-    except (pygame.error, ValueError):
-        raise ValueError(
-            '\nArray type <array_> '
-            'not understood, expecting numpy.ndarray or MemoryViewSlice got %s ' % type(array_))
-
-    cdef:
-        unsigned char [:, :, ::1] new_array = empty((height, width, 3), dtype=uint8)
-        int i=0, j=0
-        unsigned char r, g, b
-        float h, l, s
-        double *hsl = [0.0, 0.0, 0.0]
-        double *rgb = [0.0, 0.0, 0.0]
-
-    with nogil:
-        for i in prange(width, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-            for j in range(height):
-                r, g, b = array_[i, j, 0], array_[i, j, 1], array_[i, j, 2]
-                hsl = rgb_to_hsl(<float>r * ONE_255, <float>g * ONE_255, <float>b * ONE_255)
-                h = hsl[0]
-                s = hsl[1]
-                l = hsl[2]
-                s = min((s + shift_), 0.5)
-                s = max(s, 0.0)
-                rgb = hsl_to_rgb(h, s, l)
-                new_array[j, i, 0] = <unsigned char>(rgb[0] * 255.0)
-                new_array[j, i, 1] = <unsigned char>(rgb[1] * 255.0)
-                new_array[j, i, 2] = <unsigned char>(rgb[2] * 255.0)
-                free(rgb)
-                free(hsl)
-
-    return pygame.image.frombuffer(new_array, (width, height), 'RGB')
-
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef saturation_array32_c(unsigned char [:, :, :] array_,
-                          unsigned char [:, :] alpha_, float shift_):
-    """
-    Change the saturation level of an array/ pygame.Surface (compatible with 32-bit format image only)
-    Transform RGB model into HSL model and add <shift_> value to the saturation 
-    
-    :param array_: numpy.ndarray shapes (w, h, 4) representing a pygame Surface 32 bit format
-    :param alpha_: numpy.ndarray shapes (w, h) containing all alpha values
-    :param shift_: Value must be in range [-1.0 ... 1.0], negative values decrease saturation  
-    :return: a pygame.Surface 32-bit with per-pixel information 
-    """
-
-    assert -1.0 <= shift_ <= 1.0, 'Argument shift_ must be in range [-1.0 .. 1.0].'
-
-    cdef int width, height, alpha_width, alpha_height
-
-    try:
-        # numpy.ndarray ?
-        width, height =(<object>array_).shape[:2]
-    except (ValueError, pygame.error):
-        try:
-            # MemoryViewSlice ?
-            width, height = numpy.array(array_).shape[:2]
-        except (ValueError, pygame.error):
-            raise ValueError('\n'
-                'Array <array_> type not understood '
-                             'expecting numpy.ndarray or MemoryViewSlice got %s ' % type(array_))
-    try:
-        # numpy.ndarray ?
-        alpha_width, alpha_height = (<object>alpha_).shape[:2]
-    except (ValueError, pygame.error):
-        try:
-            # MemoryViewSlice ?
-            width, height = numpy.array(array_).shape[:2]
-        except (ValueError, pygame.error):
-            raise ValueError('\n'
-                'Array <alpha_> type not understood '
-                             'exp'
-                             'ecting numpy.ndarray or MemoryViewSlice got %s ' % type(alpha_))
-    # REMOVE as array is flipped
-    # if width != alpha_width or height != alpha_height:
-    #     raise ValueError("\nArray size mismatch, array (w:%s, h:%s); alpha (w:%s, h:%s)"
-    #                      % (width, height, alpha_width, alpha_height))
-
-    cdef:
-        unsigned char [:, :, ::1] new_array = empty((width, height, 4), dtype=uint8)
-        int i=0, j=0
-        float r, g, b
-        float h, l, s
-        double *hsl = [0.0, 0.0, 0.0]
-        double *rgb = [0.0, 0.0, 0.0]
-
-    with nogil:
-        for i in prange(width, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-            for j in range(height):
-
-                # Load RGB
-                r, g, b = array_[i, j, 0], array_[i, j, 1], array_[i, j, 2]
-
-                hsl = rgb_to_hsl(r * ONE_255, g * ONE_255, b * ONE_255)
-                h = hsl[0]
-                s = hsl[1]
-                l = hsl[2]
-                s = min((s + shift_), 1.0)
-                s = max(s, 0.0)
-                rgb = hsl_to_rgb(h, s, l)
-                r = rgb[0] * 255.0
-                g = rgb[1] * 255.0
-                b = rgb[2] * 255.0
-                new_array[i, j, 0] = <unsigned char>r
-                new_array[i, j, 1] = <unsigned char>g
-                new_array[i, j, 2] = <unsigned char>b
-                new_array[i, j, 3] = alpha_[j, i]
-
-                free(rgb)
-                free(hsl)
-
-    return pygame.image.frombuffer(new_array, (height, width), 'RGBA')
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef saturation_buffer_mask_c(unsigned char [:] buffer_, float shift_, float [:, :] mask_array):
-    """
-    Change the saturation level of all selected pixels from a buffer.
-    Transform RGB model into HSL model and <shift_> values.
-    mask_array argument cannot be null. The mask should be a 2d array
-    (filled with normalized float values in range[0.0 ... 1.0]). 
-    mask_array[i, j] with indices i, j represent a monochrome value (R=G=B)
-    
-    :param buffer_: 1d Buffer representing a 24bit format pygame.Surface
-    :param shift_: Value must be in range [-1.0 ... 1.0],
-                   between [-1.0 ... 0.0] decrease saturation.
-                   between [0.0  ... 1.0] increase saturation.
-    :param mask_array: numpy.ndarray with shape (width, height) mask_array width and height 
-    must be equal to the buffer length
-    :return: a pygame.Surface 24-bit without per-pixel information 
-    """
-
-    assert isinstance(shift_, float), \
-           'Expecting float for argument shift_, got %s ' % type(shift_)
-    assert -1.0 <= shift_ <= 1.0, 'Argument shift_ must be in range [-1.0 .. 1.0].'
-
-    cdef int b_length
-    try:
-        b_length = len(<object>buffer_)
-    except ValueError:
-        raise ValueError("\nIncompatible buffer type got %s." % type(buffer_))
-
-    cdef int width, height
-    if mask_array is not None:
-        try:
-            width, height = (<object>mask_array).shape[:2]
-        except (ValueError, pygame.error) as e:
-            raise ValueError("\nIncompatible buffer type got %s." % type(buffer_))
-    else:
-        raise ValueError("\nIncompatible buffer type got %s." % type(buffer_))
-
-
-    if width * height != (b_length // 3):
-        raise ValueError("\nMask length and "
-                         "buffer length mismatch, %s %s" % (b_length, width * height))
-
-    cdef:
-        int i=0, j=0, ii=0, ix
-        unsigned char [:, :, ::1] new_array = empty((height, width, 3), dtype=uint8)
-        unsigned char  r, g, b
-        float h, l, s
-        double *hsl = [0.0, 0.0, 0.0]
-        double *rgb = [0.0, 0.0, 0.0]
-        xyz pixel
-
-    with nogil:
-        for ii in prange(0, b_length, 3, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-            # load pixel RGB values
-            r = buffer_[ii]
-            g = buffer_[ii + 1]
-            b = buffer_[ii + 2]
-            pixel = to3d_c(ii, width, 3)
-
-            if mask_array[pixel.x, pixel.y] > 0.0:
-                hsl = rgb_to_hsl(<float>r * ONE_255, <float>g * ONE_255, <float>b * ONE_255)
-                h = hsl[0]
-                s = hsl[1]
-                l = hsl[2]
-                s = min((s + shift_), 1.0)
-                s = max(s, 0.0)
-                rgb = hsl_to_rgb(h, s, l)
-                r = <unsigned char>(rgb[0] * 255.0)
-                g = <unsigned char>(rgb[1] * 255.0)
-                b = <unsigned char>(rgb[2] * 255.0)
-
-                free(rgb)
-                free(hsl)
-
-            new_array[pixel.y, pixel.x, 0] = r
-            new_array[pixel.y, pixel.x, 1] = g
-            new_array[pixel.y, pixel.x, 2] = b
-
-    return pygame.image.frombuffer(new_array, (width, height), 'RGB')
-
-
-# -----------------------------------ARRAY/ BUFFER INDEXING (MAPPING) -----------------------------
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef inline xyz to3d_c(int index, int width, int depth)nogil:
-    """
-    Map a 1d buffer pixel values into a 3d array, e.g buffer[index] --> array[i, j, k]
-    Both (buffer and array) must have the same length (width * height * depth)
-    To speed up the process, no checks are performed upon the function call and
-    index, width and depth values must be > 0.
-
-    :param index: integer; Buffer index value
-    :param width: integer; image width
-    :param depth: integer; image depth (3)RGB, (4)RGBA
-    :return: Array index/key [x][y][z] pointing to a pixel RGB(A) identical
-    to the buffer index value. Array index values are placed into a C structure (xyz)
-    """
-    cdef xyz v;
-    cdef int ix = index // depth
-    v.y = <int>(ix / width)
-    v.x = ix % width
-    v.z = index % depth
-    return v
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef inline int to1d_c(int x, int y, int z, int width, int depth)nogil:
-    """
-    Map a 3d array value RGB(A) into a 1d buffer. e.g array[i, j, k] --> buffer[index]
-   
-    To speed up the process, no checks are performed upon the function call and
-    x, y, z, width and depth values must be > 0 and both (buffer and array) must
-    have the same length (width * height * depth)
-    
-    :param x: integer; array row value   
-    :param y: integer; array column value
-    :param z: integer; RGB(3) or RGBA(4) 
-    :param width: source image width 
-    :param depth: integer; source image depth (3)RGB or (4)RGBA
-    :return: return the index value into a buffer for the given 3d array indices [x][y][z]. 
-    """
-    return <int>(y * width * depth + x * depth + z)
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef inline int vmap_buffer_c(int index, int width, int height, int depth)nogil:
-    """
-    Vertically flipped a single buffer value.
-     
-    :param index: integer; index value 
-    :param width: integer; image width
-    :param height: integer; image height
-    :param depth: integer; image depth (3)RGB or (4)RGBA
-    :return: integer value pointing to the pixel in the buffer (traversed vertically). 
-    """
-    cdef:
-        int ix
-        int x, y, z
-    ix = index // 4
-    y = int(ix / height)
-    x = ix % height
-    z = index % depth
-    return (x * width * depth) + (depth * y) + z
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef unsigned char [:] vfb_rgb_c(unsigned char [:] source, unsigned char [:] target,
-                                   int width, int height)nogil:
-    """
-    Vertically flipped buffer type RGB
-    
-    Flip a C-buffer vertically filled with RGB values
-    Re-sample a buffer in order to swap rows and columns of its equivalent 3d model
-    For a 3d numpy.array this function would be equivalent to a transpose (1, 0, 2)
-    Buffer length must be equivalent to width x height x RGB otherwise a valuerror
-    will be raised.
-    This method is using Multiprocessing OPENMP
-    e.g
-    Here is a 9 pixels buffer (length = 27), pixel format RGB
-    
-    buffer = [RGB1, RGB2, RGB3, RGB4, RGB5, RGB6, RGB7, RGB8, RGB9]
-    Equivalent 3d model would be (3x3x3):
-    3d model = [RGB1 RGB2 RGB3]
-               [RGB4 RGB5 RGB6]
-               [RGB7 RGB8 RGB9]
-
-    After vbf_rgb:
-    output buffer = [RGB1, RGB4, RGB7, RGB2, RGB5, RGB8, RGB3, RGB6, RGB9]
-    and its equivalent 3d model
-    3D model = [RGB1, RGB4, RGB7]
-               [RGB2, RGB5, RGB8]
-               [RGB3, RGB6, RGB9]
-        
-    :param source: 1d buffer to flip vertically (unsigned char values).
-     The array length is known with (width * height * depth). The buffer represent 
-     image 's pixels RGB. 
-     
-    :param target: Target buffer must have same length than source buffer)
-    :param width: integer; width of the image 
-    :param height: integer; height of the image
-    :return: Return a vertically flipped buffer 
-    """
-    cdef:
-        int i, j, k, index
-        unsigned char [:] flipped_array = target
-
-    for i in prange(0, width * 3, 3):
-        for j in range(0, height):
-            index = i + (width * 3 * j)
-            for k in range(3):
-                flipped_array[(j * 3) + (i * height) + k] =  <unsigned char>source[index + k]
-
-    return flipped_array
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef unsigned char [:] vfb_c(unsigned char [:] source, unsigned char [:] target,
-                                   int width, int height)nogil:
-    cdef:
-        int i, j
-        unsigned char [:] flipped_array = target
-
-    for i in prange(0, width):
-        for j in range(0, height):
-            flipped_array[j + (i * height)] =  <unsigned char>source[i + (width * j)]
-
-    return flipped_array
-
 
 # ------------------------------------------- ARRAY NORMALIZATION ------------------------------
 @cython.boundscheck(False)
@@ -2771,490 +1660,6 @@ cdef unsigned char [:] flatten3d_rgba_c(unsigned char [:, :, :] rgba_array):
                 flat[index + 3] = rgba_array[i, j, 3]
     return flat
 
-# ----------------------------------------- BRIGHT PASS FILTERS ------------------------------------------------
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef bpf24_b_c(image, int threshold = 128):
-    """
-    Bright pass filter for 24bit image (method using c-buffer)
-    
-    Calculate the luminance of every pixels and applied an attenuation c = lum2 / lum
-    with lum2 = max(lum - threshold, 0) and
-    lum = c_buffer[i] * 0.299 + c_buffer[i+1] * 0.587 + c_buffer[i+2] * 0.114
-    The output image will keep only bright area. You can adjust the threshold value
-    default 128 in order to get the desire changes.
-    
-    :param image: pygame.Surface 24 bit format (RGB)  without per-pixel information
-    :param threshold: integer; Threshold to consider for filtering pixels luminance values,
-    default is 128 range [0..255] unsigned char (python integer)
-    :return: Return a 24 bit pygame.Surface filtered (only bright area of the image remains).
-    """
-
-    # Fallback to default threshold value if argument
-    # threshold value is incorrect
-    if 0 > threshold > 255:
-        printf("\nArgument threshold must be in range [0...255], fallback to default value 128.")
-        threshold = 128
-
-    cdef:
-        int w, h
-    w, h = image.get_size()
-
-    # make sure the surface is 24-bit format RGB
-    if not image.get_bitsize() == 24:
-        raise ValueError('Surface is not 24-bit format.')
-
-    try:
-
-        buffer_ = image.get_view('2')
-
-    except (pygame.Error, ValueError):
-        raise ValueError('\nInvalid surface.')
-
-    # check sizes
-    assert w>0 and h>0,\
-        'Incorrect surface dimensions should be (w>0, h>0) got (w:%s, h:%s)' % (w, h)
-
-    cdef:
-        int b_length = buffer_.length
-        unsigned char [:] c_buffer = numpy.frombuffer(buffer_, dtype=numpy.uint8)
-        unsigned char [::1] out_buffer = numpy.empty(b_length, numpy.uint8)
-        int i = 0
-        float lum, c
-
-    with nogil:
-        for i in prange(0, b_length, 3, schedule='static', num_threads=4):
-            # ITU-R BT.601 luma coefficients
-            lum = c_buffer[i] * 0.299 + c_buffer[i+1] * 0.587 + c_buffer[i+2] * 0.114
-            if lum > threshold:
-                c = (lum - threshold) / lum
-                out_buffer[i  ] = <unsigned char>(c_buffer[i  ] * c)
-                out_buffer[i+1] = <unsigned char>(c_buffer[i+1] * c)
-                out_buffer[i+2] = <unsigned char>(c_buffer[i+2] * c)
-            else:
-                out_buffer[i], out_buffer[i+1], out_buffer[i+2] = 0, 0, 0
-
-    return pygame.image.frombuffer(out_buffer, (w, h), 'RGB')
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef bpf32_b_c(image, int threshold = 128):
-    """
-    Bright pass filter for 32-bit image (method using c-buffer)
-    
-    Calculate the luminance of every pixels and applied an attenuation c = lum2 / lum
-    with lum2 = max(lum - threshold, 0) and
-    lum = c_buffer[i] * 0.299 + c_buffer[i+1] * 0.587 + c_buffer[i+2] * 0.114
-    The output image will keep only bright area. You can adjust the threshold value
-    default 128 in order to get the desire changes.
-    
-    :param image: pygame.Surface 32 bit format (RGBA)  without per-pixel information
-    :param threshold: integer; Threshold to consider for filtering pixels luminance values
-    :return: Return a 32-bit pygame.Surface filtered (only bright area of the image remains).
-    """
-
-    # Fallback to default threshold value if arguement
-    # threshold value is incorrect
-    if 0 > threshold > 255:
-        printf("\nArgument threshold must be in range [0...255], fallback to default value 128.")
-        threshold = 128
-
-    assert isinstance(image, pygame.Surface), \
-           "\nExpecting pygame surface for arguement image, got %s " % type(image)
-
-    cdef:
-        int w, h
-    w, h = image.get_size()
-
-    # make sure the surface is 32-bit format RGBA
-    if not image.get_bitsize() == 32:
-        raise ValueError('Surface is not 32-bit format.')
-
-    try:
-
-        buffer_ = image.get_view('2')
-
-    except (pygame.Error, ValueError):
-        raise ValueError('\nInvalid surface.')
-
-    cdef:
-        int b_length = buffer_.length
-        unsigned char [:] c_buffer = numpy.frombuffer(buffer_, numpy.uint8)
-        unsigned char [::1] out_buffer = numpy.empty(b_length, numpy.uint8)
-        int i = 0
-        float lum, c
-
-    with nogil:
-        for i in prange(0, b_length, 4, schedule='static', num_threads=4):
-            # ITU-R BT.601 luma coefficients
-            lum = c_buffer[i] * 0.299 + c_buffer[i+1] * 0.587 + c_buffer[i+2] * 0.114
-            if lum > threshold:
-
-                c = (lum - threshold) / lum
-                out_buffer[i] = <unsigned char>(c_buffer[i] * c)
-                out_buffer[i+1] = <unsigned char>(c_buffer[i+1] * c)
-                out_buffer[i+2] = <unsigned char>(c_buffer[i+2] * c)
-                out_buffer[i+3] = 255
-            else:
-                out_buffer[i], out_buffer[i+1], \
-                out_buffer[i+2], out_buffer[i+3] = 0, 0, 0, 0
-
-    return pygame.image.frombuffer(out_buffer, (w, h), 'RGBA')
-
-# --------------------------------------------- FILTERING ----------------------------------------------
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef filtering24_c(surface_, mask_):
-    """
-    Multiply mask values with an array representing the surface pixels (Compatible 24 bit only).
-    Mask values are floats in range (0 ... 1.0)
-
-    :param surface_: pygame.Surface compatible 24-bit
-    :param mask_: 2d array (MemoryViewSlice) containing alpha values (float).
-    The mask_ output image is monochromatic (values range [0 ... 1.0] and R=B=G.
-    :return: Return a pygame.Surface 24 bit
-    """
-    cdef int w, h, w_, h_
-    w, h = surface_.get_size()
-    try:
-        w_, h_ = (<object>mask_).shape[:2]
-    except (ValueError, pygame.error):
-       raise ValueError(
-           '\nArgument mask_ type not understood, '
-           'expecting numpy.ndarray type (w, h) got %s ' % type(mask_))
-
-
-    assert w == w_ and h == h_, \
-        '\nSurface and mask size does not match (w:%s, h:%s), ' \
-        '(w_:%s, h_:%s) ' % (w, h, w_, h_)
-
-    try:
-        rgb_ = pygame.surfarray.pixels3d(surface_)
-    except (ValueError, pygame.error):
-        try:
-            rgb_ = pygame.surfarray.array3d(surface_)
-        except (ValueError, pygame.error):
-            raise ValueError('Incompatible surface.')
-
-    cdef:
-        unsigned char [:, :, :] rgb = rgb_.transpose(1, 0, 2)
-        unsigned char [:, :, ::1] rgb1 = numpy.empty((h, w, 3), numpy.uint8)
-        float [:, :] mask = numpy.asarray(mask_, numpy.float32)
-        int i, j
-    with nogil:
-        for i in prange(0, w, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-            for j in range(h):
-                rgb1[j, i, 0] = <unsigned char>(rgb[j, i, 0] * mask[i, j])
-                rgb1[j, i, 1] = <unsigned char>(rgb[j, i, 1] * mask[i, j])
-                rgb1[j, i, 2] = <unsigned char>(rgb[j, i, 2] * mask[i, j])
-
-    return pygame.image.frombuffer(rgb1, (w, h), 'RGB')
-
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cdef filtering32_c(surface_, mask_):
-    """
-    Multiply mask values with an array representing the surface pixels (Compatible 32 bit only).
-    Mask values are floats in range (0 ... 1.0)
-
-    :param surface_: pygame.Surface compatible 32-bit
-    :param mask_: 2d array (MemoryViewSlice) containing alpha values (float).
-    The mask_ output image is monochromatic (values range [0 ... 1.0] and R=B=G.
-    :return: Return a pygame.Surface 32-bit
-    """
-
-    cdef int w, h, w_, h_
-    w, h = surface_.get_size()
-
-    try:
-        w_, h_ = (<object>mask_).shape[:2]
-    except (ValueError, pygame.error):
-        raise ValueError(
-            '\nArgument mask_ type not understood, expecting numpy.ndarray got %s ' % type(mask_))
-
-    assert w == w_ and h == h_, 'Surface and mask size does not match.'
-
-    try:
-        rgb_ = pygame.surfarray.pixels3d(surface_)
-    except (ValueError, pygame.error):
-        try:
-            rgb_ = pygame.surfarray.array3d(surface_)
-        except (ValueError, pygame.error):
-            raise ValueError('Incompatible surface.')
-
-    cdef:
-        unsigned char [:, :, :] rgb = rgb_
-        unsigned char [:, :, ::1] rgb1 = numpy.empty((h, w, 4), numpy.uint8)
-        float [:, :] mask = numpy.asarray(mask_, numpy.float32)
-        int i, j
-    with nogil:
-        for i in prange(0, w, schedule=SCHEDULE, num_threads=THREAD_NUMBER):
-            for j in range(h):
-                rgb1[j, i, 0] = <unsigned char>(rgb[i, j, 0] * mask[i, j])
-                rgb1[j, i, 1] = <unsigned char>(rgb[i, j, 1] * mask[i, j])
-                rgb1[j, i, 2] = <unsigned char>(rgb[i, j, 2] * mask[i, j])
-                rgb1[j, i, 3] = <unsigned char>(mask[i, j] * 255.0)
-
-    return pygame.image.frombuffer(rgb1, (w, h), 'RGBA')
-
-# ----------------------------------------- BLOOM EFFECT -------------------------------------------------
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cpdef bloom_effect_buffer24_c(surface_, int threshold_, int smooth_=1, mask_=None):
-    """
-    Create a bloom effect on a pygame.Surface (compatible 24 bit surface)
-    This method is using C-buffer structure.
-
-    definition:
-        Bloom is a computer graphics effect used in video games, demos,
-        and high dynamic range rendering to reproduce an imaging artifact of real-world cameras.
-
-    1)First apply a bright pass filter to the pygame surface(SDL surface) using methods
-      bpf24_b_c or bpf32_b_c (adjust the threshold value to get the best filter effect).
-    2)Downside the newly created bpf image by factor x2, x4, x8, x16 using the pygame scale method (no need to
-      use smoothscale (bilinear filtering method).
-    3)Apply a Gaussian blur 5x5 effect on each of the downsized bpf images (if smooth_ is > 1, then the Gaussian
-      filter 5x5 will by applied more than once. Note, this have little effect on the final image quality.
-    4)Re-scale all the bpf images using a bilinear filter (width and height of original image).
-      Using an un-filtered rescaling method will pixelate the final output image.
-      For best performances sets smoothscale acceleration.
-      A value of 'GENERIC' turns off acceleration. 'MMX' uses MMX instructions only.
-      'SSE' allows SSE extensions as well.
-    5)Blit all the bpf images on the original surface, use pygame additive blend mode for
-      a smooth and brighter effect.
-
-    Notes:
-    The downscaling process of all sub-images could be done in a single process to increase performance.
-
-    :param mask_: 2d array shape (w, h)  
-    :param surface_: pygame.Surface 24 bit format surface
-    :param threshold_: integer; Threshold value used by the bright pass algorithm (default 128)
-    :param smooth_: integer; Number of Guaussian blur 5x5 to apply to downsided images.
-    :return : Returns a pygame.Surface with a bloom effect (24 bit surface)
-
-
-    """
-    # Create a copy of the pygame surface,
-    # TODO: implement a C function for copying SDL surface (pygame surfac copy is too slow)
-    # TODO: TRY MASK OPTION IN blur5x5_buffer24_c and Filtering and compare speed
-    # very slow
-    surface_cp = surface_.copy()
-
-    assert smooth_ > 0, \
-           "\nArgument smooth_ must be > 0, got %s " % smooth_
-    assert -1 < threshold_ < 256, \
-           "\nArgument threshold_ must be in range [0...255] got %s " % threshold_
-
-    cdef:
-        int w, h, bitsize
-        int w2, h2, w4, h4, w8, h8, w16, h16
-
-    w, h = surface_.get_size()
-    bitsize = surface_.get_bitsize()
-
-    if not bitsize == 24:
-        raise ValueError('\nIncorrect image format, expecting 24-bit got %s ' % bitsize)
-
-    bpf_surface =  bpf24_b_c(surface_, threshold=threshold_)
-
-    w2, h2 = w >> 1, h >> 1
-    s2 = pygame.transform.scale(bpf_surface, (w2, h2))
-    array_ = numpy.array(s2.get_view("3"), dtype=uint8, copy=False).transpose(1, 0, 2)
-    b2 = array_.flatten(order='C')
-    if smooth_ > 1:
-        for r in range(smooth_):
-            b2_blurred, b2 = blur5x5_buffer24_c(b2, w2, h2, 3)#, mask_)
-    else:
-        b2_blurred, b2 = blur5x5_buffer24_c(b2, w2, h2, 3)#, mask_)
-
-    # downscale x 4 using fast scale pygame algorithm (no re-sampling)
-    w4, h4 = w >> 2, h >> 2
-    s4 = pygame.transform.scale(bpf_surface, (w4, h4))
-    array_ = numpy.array(s4.get_view("3"), dtype=uint8, copy=False).transpose(1, 0, 2)
-    b4 = array_.flatten(order='C')
-    if smooth_ > 1:
-        for r in range(smooth_):
-            b4_blurred, b4 = blur5x5_buffer24_c(b4, w4, h4, 3)#, mask_)
-    else:
-        b4_blurred, b4 = blur5x5_buffer24_c(b4, w4, h4, 3)#, mask_)
-
-    # downscale x 8 using fast scale pygame algorithm (no re-sampling)
-    w8, h8 = w >> 3, h >> 3
-    s8 = pygame.transform.scale(bpf_surface, (w8, h8))
-    array_ = numpy.array(s8.get_view("3"), dtype=uint8, copy=False).transpose(1, 0, 2)
-    b8 = array_.flatten(order='C')
-    if smooth_ > 1:
-        for r in range(smooth_):
-            b8_blurred, b8 = blur5x5_buffer24_c(b8, w8, h8, 3)#, mask_)
-    else:
-        b8_blurred, b8 = blur5x5_buffer24_c(b8, w8, h8, 3)#, mask_)
-
-    # downscale x 16 using fast scale pygame algorithm (no re-sampling)
-    w16, h16 = w >> 4, h >> 4
-    s16 = pygame.transform.scale(bpf_surface, (w16, h16))
-    array_ = numpy.array(s16.get_view("3"), dtype=uint8, copy=False).transpose(1, 0, 2)
-    b16 = array_.flatten(order='C')
-    if smooth_ > 1:
-        for r in range(smooth_):
-            b16_blurred, b16 = blur5x5_buffer24_c(b16, w16, h16, 3)#, mask_)
-    else:
-        b16_blurred, b16 = blur5x5_buffer24_c(b16, w16, h16, 3)#, mask_)
-
-    s2 = pygame.transform.smoothscale(b2_blurred, (w , h))
-    s4 = pygame.transform.smoothscale(b4_blurred, (w , h))
-    s8 = pygame.transform.smoothscale(b8_blurred, (w, h))
-    s16 = pygame.transform.smoothscale(b16_blurred, (w, h))
-
-    surface_cp.blit(s2, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
-    surface_cp.blit(s4, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
-    surface_cp.blit(s8, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
-    surface_cp.blit(s16, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
-
-    if mask_ is not None:
-        # Multiply mask surface pixels with mask values.
-        # RGB pixels = 0 when mask value = 0.0, otherwise
-        # modify RGB amplitude
-        surface_cp = filtering24_c(surface_cp, mask_)
-
-    return surface_cp
-
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-@cython.cdivision(True)
-cpdef bloom_effect_buffer32_c(surface_, int threshold_, int smooth_=1, mask_=None):
-    """
-    Create a bloom effect on a pygame.Surface (compatible 32 bit surface)
-    This method is using C-buffer structure.
-
-    definition:
-        Bloom is a computer graphics effect used in video games, demos,
-        and high dynamic range rendering to reproduce an imaging artifact of real-world cameras.
-
-    1)First apply a bright pass filter to the pygame surface(SDL surface) using methods
-      bpf24_b_c or bpf32_b_c (adjust the threshold value to get the best filter effect).
-    2)Downside the newly created bpf image by factor x2, x4, x8, x16 using the pygame scale method (no need to
-      use smoothscale (bilinear filtering method).
-    3)Apply a Gaussian blur 5x5 effect on each of the downsized bpf images (if smooth_ is > 1, then the Gaussian
-      filter 5x5 will by applied more than once. Note, this have little effect on the final image quality.
-    4)Re-scale all the bpf images using a bilinear filter (width and height of original image).
-      Using an un-filtered rescaling method will pixelate the final output image.
-      For best performances sets smoothscale acceleration.
-      A value of 'GENERIC' turns off acceleration. 'MMX' uses MMX instructions only.
-      'SSE' allows SSE extensions as well.
-    5)Blit all the bpf images on the original surface, use pygame additive blend mode for
-      a smooth and brighter effect.
-
-    Notes:
-    The downscaling process of all sub-images could be done in a single process to increase performance.
-
-    :param mask_: 2d array shape (w, h)  
-    :param surface_: pygame.Surface 32 bit format surface
-    :param threshold_: integer; Threshold value used by the bright pass algorithm (default 128)
-    :param smooth_: integer; Number of Guaussian blur 5x5 to apply to downsided images.
-    :return : Returns a pygame.Surface with a bloom effect (32 bit surface)
-
-
-    """
-    # Create a copy of the pygame surface,
-    # TODO: implement a C function for copying SDL surface (pygame surfac copy is too slow)
-    # TODO: TRY MASK OPTION IN blur5x5_buffer24_c and Filtering and compare speed
-    # very slow
-    surface_cp = surface_.copy()
-
-    assert smooth_ > 0, \
-           "\nArgument smooth_ must be > 0, got %s " % smooth_
-    assert -1 < threshold_ < 256, \
-           "\nArgument threshold_ must be in range [0...255] got %s " % threshold_
-
-    cdef:
-        int w, h, bitsize
-        int w2, h2, w4, h4, w8, h8, w16, h16
-
-    w, h = surface_.get_size()
-    bitsize = surface_.get_bitsize()
-
-    if not bitsize == 32:
-        raise ValueError('\nIncorrect image format, expecting 32-bit got %s ' % bitsize)
-
-    bpf_surface =  bpf32_b_c(surface_, threshold=threshold_)
-
-    w2, h2 = w >> 1, h >> 1
-    s2 = pygame.transform.scale(bpf_surface, (w2, h2))
-    b2 = numpy.frombuffer(s2.get_view("2"), numpy.uint8)
-    if smooth_ > 1:
-        for r in range(smooth_):
-            b2_blurred, b2 = blur5x5_buffer32_c(b2, w2, h2, 4)#, mask_)
-    else:
-        b2_blurred, b2 = blur5x5_buffer32_c(b2, w2, h2, 4)#, mask_)
-
-    # downscale x 4 using fast scale pygame algorithm (no re-sampling)
-    w4, h4 = w >> 2, h >> 2
-    s4 = pygame.transform.scale(bpf_surface, (w4, h4))
-    b4 = numpy.frombuffer(s4.get_view("2"), numpy.uint8)
-    if smooth_ > 1:
-        for r in range(smooth_):
-            b4_blurred, b4 = blur5x5_buffer32_c(b4, w4, h4, 4)#, mask_)
-    else:
-        b4_blurred, b4 = blur5x5_buffer32_c(b4, w4, h4, 4)#, mask_)
-
-    # downscale x 8 using fast scale pygame algorithm (no re-sampling)
-    w8, h8 = w >> 3, h >> 3
-    s8 = pygame.transform.scale(bpf_surface, (w8, h8))
-    b8 = numpy.frombuffer(s8.get_view("2"), numpy.uint8)
-    if smooth_ > 1:
-        for r in range(smooth_):
-            b8_blurred, b8 = blur5x5_buffer32_c(b8, w8, h8, 4)#, mask_)
-    else:
-        b8_blurred, b8 = blur5x5_buffer32_c(b8, w8, h8, 4)#, mask_)
-
-    # downscale x 16 using fast scale pygame algorithm (no re-sampling)
-    w16, h16 = w >> 4, h >> 4
-    s16 = pygame.transform.scale(bpf_surface, (w16, h16))
-    b16 = numpy.frombuffer(s16.get_view("2"), numpy.uint8)
-    if smooth_ > 1:
-        for r in range(smooth_):
-            b16_blurred, b16 = blur5x5_buffer32_c(b16, w16, h16, 4)#, mask_)
-    else:
-        b16_blurred, b16 = blur5x5_buffer32_c(b16, w16, h16, 4)#, mask_)
-
-    s2 = pygame.transform.smoothscale(b2_blurred, (w , h))
-    s4 = pygame.transform.smoothscale(b4_blurred, (w , h))
-    s8 = pygame.transform.smoothscale(b8_blurred, (w, h))
-    s16 = pygame.transform.smoothscale(b16_blurred, (w, h))
-
-    surface_cp.blit(s2, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
-    surface_cp.blit(s4, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
-    surface_cp.blit(s8, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
-    surface_cp.blit(s16, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
-
-
-    if mask_ is not None:
-        # Multiply mask surface pixels with mask values.
-        # RGB pixels = 0 when mask value = 0.0, otherwise
-        # modify RGB amplitude
-        surface_cp = filtering32_c(surface_cp.convert_alpha(), mask_)
-
-    return surface_cp
 
 #-------------------------------------- STACKING ------------------------------------------------
 @cython.boundscheck(False)
@@ -3371,6 +1776,7 @@ cdef heatwave_array24_horiz_c(unsigned char [:, :, :] rgb_array,
                             float frequency, float amplitude, float attenuation=0.10,
                             unsigned char threshold=64):
     """
+    HORIZONTAL HEATWAVE 
     
     DISTORTION EQUATION: 
     distortion = sin(x * attenuation + frequency) * amplitude * mask_array[x, y]
@@ -3435,6 +1841,7 @@ cdef heatwave_array32_horiz_c(unsigned char [:, :, :] rgba_array,
                             float frequency, float amplitude, float attenuation=0.10,
                             unsigned char threshold=64):
     """
+    HORIZONTAL HEATWAVE 
     
     DISTORTION EQUATION: 
     distortion = sin(x * attenuation + frequency) * amplitude * mask_array[x, y]
@@ -3502,16 +1909,26 @@ cdef heatwave_buffer24_horiz_c(unsigned char [:] rgb_buffer,
                                float frequency, float amplitude, float attenuation=0.10,
                                unsigned char threshold=64):
     """
+    HORIZONTAL HEATWAVE 
+    
+    DISTORTION EQUATION: 
+    distortion = sin(x * attenuation + frequency) * amplitude * mask_array[x, y]
+    Amplitude is equivalent to ((frequency % 2) / 1000.0) and will define the maximum pixel displacement.
+    The highest the frequency the lowest the heat wave  
+    
+    e.g : 
+    surface = heatwave_buffer24_horiz_c(numpy.asarray(new_array).transpose(1, 0, 2),
+            alpha, heat_value, (frequency % 2) / 1000.0, attenuation=0.10)
 
-    :param rgb_buffer:
-    :param mask_buffer:
-    :param width:
-    :param height:
-    :param frequency:
-    :param amplitude:
-    :param attenuation:
-    :param threshold:
-    :return:
+    :param rgb_buffer: 1d Buffer representing the RGB portion of the light
+    :param mask_buffer: 2d buffer representing the alpha portion of the light effect
+    :param width: light's width
+    :param height: light's height
+    :param frequency: float; incremental variable 
+    :param amplitude: float; amplitude is define by the following equation ((frequency % 2) / 1000.0)
+    :param attenuation: float; set to 0.10 (default value) 
+    :param threshold: unsigned char; set to 64 (default) if alpha below threshold the pixel is unchanged
+    :return: return a pygame surface 24-bit 
     """
 
     cdef int b_length
@@ -3563,15 +1980,25 @@ cdef heatwave_buffer24_vertical_c(unsigned char [:] rgb_buffer,
                                   float frequency, float amplitude, float attenuation=0.10,
                                   unsigned char threshold=64):
     """
+    VERTICAL HEATWAVE 
 
-    :param rgb_buffer:
-    :param mask_buffer:
-    :param width:
-    :param height:
-    :param frequency:
-    :param amplitude:
-    :param attenuation:
-    :param threshold:
+    DISTORTION EQUATION: 
+    distortion = sin(v.x * attenuation + frequency) * amplitude * mask_buffer[v.x, v.y]
+    Amplitude is equivalent to ((frequency % 2) / 1000.0) and will define the maximum pixel displacement.
+    The highest the frequency the lowest the heat wave  
+    
+    e.g : 
+    surface = heatwave_buffer24_vertical_c(numpy.asarray(new_array).transpose(1, 0, 2),
+            alpha, heat_value, (frequency % 2) / 1000.0, attenuation=0.10)
+
+    :param rgb_buffer: 1d Buffer representing the RGB portion of the light
+    :param mask_buffer: 2d buffer representing the alpha portion of the light effect
+    :param width: light's width
+    :param height: light's height
+    :param frequency: float; incremental variable 
+    :param amplitude: float; amplitude is define by the following equation ((frequency % 2) / 1000.0)
+    :param attenuation: float; set to 0.10 (default value) 
+    :param threshold: unsigned char; set to 64 (default) if alpha below threshold the pixel is unchanged
     :return:
     """
 

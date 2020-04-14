@@ -61,17 +61,19 @@ from LIGHTS import area24, area32, area24b, \
     area32b, apply32b, stack_buffer, area24bb, light_volumetric, light_volume,\
     flatten2d, flatten3d_rgb, flatten3d_rgba, stack_object
 
+
+
 import random
 
 if __name__ == '__main__':
-    screen = pygame.display.set_mode((800, 600))
+    screen = pygame.display.set_mode((400, 400))
 
-    background = pygame.image.load('A1.png').convert()
+    background = pygame.image.load('Aliens.jpg').convert()
     background.set_alpha(None)
 
     # CONVERT BACKGROUND INTO AN ARRAY
     # RESIZE PICTURE TO THE SCREEN SIZE
-    background = pygame.transform.smoothscale(background, (800, 600))
+    background = pygame.transform.smoothscale(background, (400, 400))
     background_rgb = pygame.surfarray.pixels3d(background)
     w, h = background.get_size()
 
@@ -197,15 +199,17 @@ if __name__ == '__main__':
 
     total_t = timeit.timeit("area24bb(0, 1, background_buffer, w, h,"
                             "lalpha_buffer, lw, lh, c, 3.0, smooth=False, saturation=True, "
-                            "sat_value=0.2, bloom=False)", "from __main__ import background_buffer, c,"
-                                                           "lalpha_buffer, area24bb, lw, lh, c, w, h ",
+                            "sat_value=0.2, bloom=False, heat=False, frequency=1.0)",
+                            "from __main__ import background_buffer, c,"
+                            "lalpha_buffer, area24bb, lw, lh, c, w, h ",
                             number=N)
     print("area24bb SATURATION ", total_t, total_t / N)
 
     total_t = timeit.timeit("area24bb(0, 1, background_buffer, w, h,"
                             "lalpha_buffer, lw, lh, c, 3.0, smooth=False, saturation=False, "
-                            "sat_value=0.2, bloom=True)", "from __main__ import background_buffer, c,"
-                                                          "lalpha_buffer, area24bb, lw, lh, c, w, h ",
+                            "sat_value=0.2, bloom=True, heat=False, frequency=1.0"
+                            ")", "from __main__ import background_buffer, c,"
+                            "lalpha_buffer, area24bb, lw, lh, c, w, h ",
                             number=N)
     print("area24bb BLOOM ", total_t, total_t / N)
 
@@ -216,8 +220,10 @@ if __name__ == '__main__':
     red = 0
     i=0
     while 1:
+
         pygame.event.pump()
         keys = pygame.key.get_pressed()
+
         for event in pygame.event.get():
             if event.type == pygame.MOUSEMOTION:
                 MOUSE_POS = event.pos
@@ -225,38 +231,42 @@ if __name__ == '__main__':
         if keys[pygame.K_F8]:
             pygame.image.save(screen, 'Screendump' + str(i) + '.png')
 
+        if keys[pygame.K_ESCAPE]:
+            pygame.quit()
+            break
+
         screen.fill((0, 0, 0))
 
         screen.blit(back, (0, 0))
 
-        # lit_surface, sw, sh = area24(
+        lit_surface, sw, sh = area24(
+            MOUSE_POS[0], MOUSE_POS[1], background_rgb, lalpha, intensity=8.0, color=c,
+            smooth=False, saturation=False, sat_value=0.2, bloom=False, heat=False, frequency=index)
+
+        # lit_surface, sw, sh = area32(
         #     MOUSE_POS[0], MOUSE_POS[1], background_rgb, lalpha, intensity=8.0, color=c,
         #     smooth=False, saturation=False, sat_value=0.2, bloom=False, heat=True, frequency=index)
 
-        # lit_surface, sw, sh = area32(
-        #     MOUSE_POS[0], MOUSE_POS[1], background_rgb, lalpha, intensity=3.0, color=c,
-        #     smooth=False, saturation=False, sat_value=0.2, bloom=False, heat=True, frequency=index)
-        #
         # lit_surface, sw, sh = area24b(
         #     MOUSE_POS[0], MOUSE_POS[1], background_rgb,
         #     lalpha, c, 8.0, smooth=False, saturation=False,
-        #     sat_value=0.2, bloom=False, heat=True, frequency=index)# , array_=smokes[index])
+        #     sat_value=0.2, bloom=True, heat=False, frequency=index)  # , array_=smokes[index])
 
-        c = numpy.array([128.0 / 255.0, 128.0 / 255.0, 200.0 / 255.0], float32, copy=False)
-        lit_surface, sw, sh = area24bb(
-            MOUSE_POS[0], MOUSE_POS[1], background_buffer, w, h,
-            lalpha_buffer, lw, lh, c, 5.0, smooth=False,
-            saturation=False, sat_value=1.0, bloom=False, heat=False, frequency=index)
+        # c = numpy.array([128.0 / 255.0, 128.0 / 255.0, 200.0 / 255.0], float32, copy=False)
+        # lit_surface, sw, sh = area24bb(
+        #     MOUSE_POS[0], MOUSE_POS[1], background_buffer, w, h,
+        #     lalpha_buffer, lw, lh, c, 8.0, smooth=False,
+        #     saturation=False, sat_value=1.0, bloom=False, heat=True, frequency=index)
 
-        c = numpy.array([128.0 / 255.0, 128.0 / 255.0, 200.0 / 255.0], float32, copy=False)
-        lit_surface1, sw1, sh1 = area24bb(
-            250, 150, background_buffer, w, h,
-            lalpha_buffer, lw, lh, c, 5.0, smooth=False,
-            saturation=False, sat_value=1.0, bloom=False, heat=False, frequency=index)
+        # c = numpy.array([128.0 / 255.0, 128.0 / 255.0, 200.0 / 255.0], float32, copy=False)
+        # lit_surface1, sw1, sh1 = area24bb(
+        #     250, 150, background_buffer, w, h,
+        #     lalpha_buffer, lw, lh, c, 5.0, smooth=False,
+        #     saturation=False, sat_value=1.0, bloom=False, heat=False, frequency=index)
 
         # c = numpy.array([128.0 / 255.0, 201.0 / 255.0, 220.0 / 255.0], float32, copy=False)
         # lit_surface, sw, sh = light_volume(MOUSE_POS[0], MOUSE_POS[1],
-        #                                    background_rgb, lalpha, 5.0, c)#, smokes[int(index)])
+        #                                    background_rgb, lalpha, 8.0, c, smokes[int(index)])
         # c = numpy.array([128.0 / 255.0, 128.0 / 255.0, 128.0 / 255.0], float32, copy=False)
 
         # lit_surface = apply32b(background_buffer.flatten(), lalpha_buffer, 1.0, c, lw, lh)
@@ -277,18 +287,18 @@ if __name__ == '__main__':
         else:
             yy = MOUSE_POS[1] - lh2
 
-        if sw1 < lw and 250 <= w - lw2:
-            xxx = 0
-        else:
-            xxx = 250 - lw2
-
-        if sh1 < lh and 150 <= lh - lh2:
-            yyy = 0
-        else:
-            yyy = 150 - lh2
+        # if sw1 < lw and 250 <= w - lw2:
+        #     xxx = 0
+        # else:
+        #     xxx = 250 - lw2
+        #
+        # if sh1 < lh and 150 <= lh - lh2:
+        #     yyy = 0
+        # else:
+        #     yyy = 150 - lh2
 
         screen.blit(lit_surface, (xx, yy), special_flags=pygame.BLEND_RGBA_ADD)
-        screen.blit(lit_surface1, (xxx, yyy), special_flags=pygame.BLEND_RGBA_ADD)
+        # screen.blit(lit_surface1, (xxx, yyy), special_flags=pygame.BLEND_RGBA_ADD)
         # screen.blit(pygame.surfarray.make_surface(numpy.asarray(smokes[index])), (0, 0))
         pygame.display.flip()
 
