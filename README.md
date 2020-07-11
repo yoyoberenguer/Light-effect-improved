@@ -96,9 +96,15 @@ Also you can change the number of threads needed with the flag THREAD_NUMBER (de
 ```
 In a command prompt and under the directory containing the source files
 C:\>python setup_lights.py build_ext --inplace
+C:\>python setup_Saturation.py build_ext --inplace
 
 If the compilation fail, refers to the requirement section and make sure cython 
 and a C-compiler are correctly install on your system. 
+```
+## DEMO
+```
+Edit the file test_lights.py in your favorite python IDE and run it 
+
 ```
 
 ## HOW TO: 
