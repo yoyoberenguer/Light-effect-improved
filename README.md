@@ -104,71 +104,7 @@ and a C-compiler are correctly install on your system.
 ## DEMO
 ```
 Edit the file test_lights.py in your favorite python IDE and run it 
+Or run pylight.py
 
 ```
 
-## HOW TO: 
-
-The below source code is also in the python file pylight.py
-
-Run pylight.py with your favorite python IDE 
-
-```
-import LIGHTS
-from LIGHTS import area24
-
-screen = pygame.display.set_mode((800, 600))
-
-background = pygame.image.load('A1.png').convert()
-background.set_alpha(None)
-background = pygame.transform.smoothscale(background, (800, 600))
-background_rgb = pygame.surfarray.pixels3d(background)
-w, h = background.get_size()
-back = background.copy()
-back.set_alpha(80)
-
-light = pygame.image.load('Radial8.png').convert_alpha()
-light = pygame.transform.smoothscale(light, (400, 400))
-lw, lh = light.get_size()
-lw2, lh2 = lw >> 1, lh >> 1
-lrgb = pygame.surfarray.pixels3d(light)
-lalpha = pygame.surfarray.pixels_alpha(light)
-
-lw, lh = light.get_size()
-lw2, lh2 = lw >> 1, lh >> 1
-
-# EFFECTS ARE NON CUMULATIVE 
-lit_surface, sw, sh = area24(
-   MOUSE_POS[0],                       # Mouse position x 
-   MOUSE_POS[1],                       # Mouse position y
-   background_rgb,                     # Background image transform into a numpy.ndarray (w, h, 3)
-   lalpha,                             # Radial mask image transform into a numpy.ndarray (w, h)
-   intensity=8.0,                      # Light intensity > 0  
-   color=c,                            # Light coloration (numpy.array) 
-                                       # e.g numpy.array([128.0 / 255.0, 128.0 / 255.0, 200.0 / 255.0], 
-                                       float32, copy=False)
-   smooth=False,                       # boolean, True smooth the output image with GAUSSIAN blur 5x5 
-   saturation=False, sat_value=0.2,    # boolean, True saturate the output image (use HSL algorithm), sat_value is
-                                       # default 20% (moderate saturation)
-   bloom=False,                        # boolean, Bloom effect to the final output image
-   heat=False, frequency=index)        # boolean, Heat effect on the output image, frequency is an incrementing 
-                                       # variable (default 0.5 each frame)
-  # sw and sh are equivalent to the 
-  # light effect width and height (returned by area24)
-  # lw and lh are the radial mask width and height
-  if sw < lw and MOUSE_POS[0] <= w - lw2:
-      xx = 0
-  else:
-      xx = MOUSE_POS[0] - lw2
-
-  if sh < lh and MOUSE_POS[1] <= lh - lh2:
-      yy = 0
-  else:
-      yy = MOUSE_POS[1] - lh2
-
-  screen.blit(lit_surface, (xx, yy), special_flags=pygame.BLEND_RGBA_ADD)
-  pygame.display.flip()
-
-  index += 0.5
-```
-      
