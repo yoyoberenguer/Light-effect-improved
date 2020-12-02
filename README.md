@@ -1,6 +1,12 @@
 # Light-effect-improved
 Light effect on pygame surface
 
+## New release 
+```
+Download and install setup_LightEffect.exe
+```
+
+
 ![alt text](https://github.com/yoyoberenguer/light-effect-improved/blob/master/Screendump725.png)
 
 ![alt text](https://github.com/yoyoberenguer/light-effect-improved/blob/master/Screendump1180.png)
