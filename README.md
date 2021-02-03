@@ -63,8 +63,7 @@ Here is the list of available effect you can use:
                HSL algorithms are build in C language (external references with rgb_to_hsl and hsl_to_rgb.
                Both techniques are using C pointer and allocate memory blocks for each function calls
                in order to return a tuple hue, saturation, lightness. This imply that each block of memory needs
-               to be freed after each function call. This is done automatically but be aware of that particularity if
-               you are using HSL algorithms in a different project.
+               to be freed after each function call. 
                see https://github.com/yoyoberenguer/HSL for more details.
                
 - Bloom      : Bloom effect is a computer graphics effect used in video games, demos, and high dynamic range
