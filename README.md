@@ -34,27 +34,28 @@ the function (either buffer or numpy array).
 ```
 The technique behind the scene is very simple:
 
-1) A portion of the screen is taken (corresponding to the light's radial mask size),
-   often an RGB block of pixels under the light source.
-2) Then we are applying changes to the RGB block using the pre-defined settings such
-   as light coloration, light intensity value and other techniques explain below
+1) Take a portion of the screen, block of pixels under the light source (same size that the radial mask),
+  
+2) Apply transformation to the RGB block such as light coloration, light intensity value and other techniques explain below
    (smoothing, saturation, bloom effect, heat wave convection effect)
-3) The final array is build from both portions (RGB block and Alpha block, process also called STACKING)
+   
+3) Build final array array from both chunks (RGB block and Alpha block, process also called STACKING)
    in order to provide an array shape (w, h, 4) to be converted to a pygame surface with
    pygame.image.frombuffer method.
-4) The resulting image is blit onto the background with the additive mode (blending mode) using pygame
-   special flag BLEND_RGBA_ADD
+   
+4) Blit the surfac to the background with an additive mode (blending mode) using pygame special flag BLEND_RGBA_ADD
    Note: For 32-bit surface, additive mode is not required as the surface contains per-pixel alpha
-   transparency channel.Blending it to the background will create a rectangular surface shape and alter
-   the alpha channel (creating an undesirable rendering effect).
+   transparency channel.
 ```
 
 ## EFFECTS
 ```
-Some effect can be added to the light source to increase realistic rendering and or to alter
-light source effect.
+Some process can be added to the light source to increase realistic rendering effects.
+
 Here is the list of available effect you can use:
+
 - Smooth     : Smooth the final light source effect with a GAUSSIAN BLUR, kernel 5x5 in real time
+
 - Saturation : Create a saturation effect. You can set a variable between [-1.00 ... 1.0] to adjust the
                saturation level. Below zero, the light source turns slowly to a greyscale and above zero,
                the RGB block will have saturated pixels. Default value is 0.2 and create a moderate saturation effect.
@@ -65,6 +66,7 @@ Here is the list of available effect you can use:
                to be freed after each function call. This is done automatically but be aware of that particularity if
                you are using HSL algorithms in a different project.
                see https://github.com/yoyoberenguer/HSL for more details.
+               
 - Bloom      : Bloom effect is a computer graphics effect used in video games, demos, and high dynamic range
                rendering to reproduce an imaging artifact of real-world cameras.
                In our scenario, the bloom effect will enhance the light effect when the light source
@@ -72,6 +74,7 @@ Here is the list of available effect you can use:
                adjusted with the variable threshold default 0). Threshold determine if a pixel will be included in the
                bloom process. The highest the threshold the fewer pixel will be included into the bloom process.
                See https://github.com/yoyoberenguer/BLOOM for more details concerning the bloom method.
+               
 - Heat       : Heat wave effect or convection effect. This algorithm create an illusion of hot air circulating in
                the light source. A mask is used to determine the condition allowing the pixels distortion.
 
