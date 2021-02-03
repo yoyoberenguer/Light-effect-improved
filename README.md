@@ -43,7 +43,7 @@ The technique behind the scene is very simple:
    in order to provide an array shape (w, h, 4) to be converted to a pygame surface with
    pygame.image.frombuffer method.
    
-4) Blit the surfac to the background with an additive mode (blending mode) using pygame special flag BLEND_RGBA_ADD
+4) Blit the surface to the background with an additive mode (blending mode) using pygame special flag BLEND_RGBA_ADD
    Note: For 32-bit surface, additive mode is not required as the surface contains per-pixel alpha
    transparency channel.
 ```
